@@ -70,6 +70,9 @@ class MenuHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/api/health":
+            self._send_json({"ok": True})
+            return
         if parsed.path.startswith("/api/room/"):
             room_id = unquote(parsed.path.split("/api/room/", 1)[1])
             with lock:
@@ -122,15 +125,20 @@ class MenuHandler(SimpleHTTPRequestHandler):
 
 
 def main():
-    preferred = int(os.environ.get("PORT", "8080"))
-    port = find_available_port(preferred, preferred + 10)
-    if port is None:
-        print("사용 가능한 포트를 찾지 못했습니다. 8080~8090 포트를 확인해주세요.", file=sys.stderr)
-        sys.exit(1)
+    if "PORT" in os.environ:
+        port = int(os.environ["PORT"])
+    else:
+        port = find_available_port(8080, 8090)
+        if port is None:
+            print("사용 가능한 포트를 찾지 못했습니다. 8080~8090 포트를 확인해주세요.", file=sys.stderr)
+            sys.exit(1)
 
     server = ThreadingHTTPServer(("0.0.0.0", port), MenuHandler)
-    with open(PORT_FILE, "w", encoding="utf-8") as file:
-        file.write(str(port))
+    try:
+        with open(PORT_FILE, "w", encoding="utf-8") as file:
+            file.write(str(port))
+    except OSError:
+        pass
 
     print(f"Serving at http://localhost:{port}")
     if port != preferred:
