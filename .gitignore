@@ -1,0 +1,8 @@
+selections.json
+port.txt
+naver-menu.html
+naver-home.html
+naver-booking.html
+__pycache__/
+*.pyc
+.DS_Store
